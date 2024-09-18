@@ -1,26 +1,23 @@
 class Game {
     constructor() {
-        this.app = new PIXI.Application({width: 800, height: 600});
-        document.body.appendChild(this.app.view);
-
-        // Load assets
-        PIXI.Loader.shared
-            .add('spritesheet', 'assets/player.json')
-            .load(() => this.setup());
+        this.app = new PIXI.Application();
+        this.width = 600 // window.innerWidth;
+        this.height = 800 // window.innerHeight;
+        this.player = new Player(this.app);
+        
+        this.run();
     }
 
-    setup() {
-        let playerTextures = [];
-        for (let i = 1; i <= 6; i++) {
-            playerTextures.push(PIXI.Texture.from(`player-${i}.png`));
-        }
+    async run() {
+        await this.app.init({width: this.width, height: this.height});
+        document.body.appendChild(this.app.canvas);
 
-        // this.player = new PIXI.AnimatedSprite(playerTextures);
-        this.player = new Player(playerTextures);
-        this.app.stage.addChild(this.player);
-
-        this.app.ticker.add(delta => {
-            this.player.move(1 * delta, 0);
+        this.app.ticker.add(() => {
+            this.gameLoop();
         });
+    }
+
+    gameLoop() {
+        
     }
 }
