@@ -1,6 +1,13 @@
 {
     "configurations": [
         {
+            "name": "Launch Edge",
+            "request": "launch",
+            "type": "msedge",
+            "url": "http://localhost:5501",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "chrome",
             "name": "http://127.0.0.1:3000/index.html",
             "request": "launch",

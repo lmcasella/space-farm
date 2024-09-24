@@ -6554,7 +6554,39 @@
     }
   },
   "animations": {
-    "walk": [
+    "idleUp": [
+      "104.png"
+    ],
+    "idleLeft": [
+      "117.png"
+    ],
+    "idleDown": [
+      "130.png"
+    ],
+    "idleRight": [
+      "143.png"
+    ],
+    "walkUp": [
+      "105.png",
+      "106.png",
+      "107.png",
+      "108.png",
+      "109.png",
+      "110.png",
+      "111.png",
+      "112.png"
+    ],
+    "walkLeft": [
+      "118.png",
+      "119.png",
+      "120.png",
+      "121.png",
+      "122.png",
+      "123.png",
+      "124.png",
+      "125.png"
+    ],
+    "walkDown": [
       "131.png",
       "132.png",
       "133.png",
@@ -6563,6 +6595,16 @@
       "136.png",
       "137.png",
       "138.png"
+    ],
+    "walkRight": [
+      "144.png",
+      "145.png",
+      "146.png",
+      "147.png",
+      "148.png",
+      "149.png",
+      "150.png",
+      "151.png"
     ]
   },
   "meta": {
