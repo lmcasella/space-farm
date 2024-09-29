@@ -2,7 +2,7 @@ class Player extends GameObject {
     constructor(app) {
         super(app, 400, 300);
         this.ready = false;
-        this.speed = 3;
+        this.speed = 4;
         this.movement = {
             up: false,
             down: false,
@@ -11,7 +11,10 @@ class Player extends GameObject {
         };
 
         this.animations = {};
-
+        
+        // Create a temporary bounds to simulate the new position
+        const newBounds = {};
+        
         this.setupKeysControls();
         this.loadPlayer();
     }
@@ -31,7 +34,7 @@ class Player extends GameObject {
 
         // Animacion por defecto
         this.sprite = new PIXI.AnimatedSprite(this.animations.idleDown);
-        this.sprite.animationSpeed = 0.15;
+        this.sprite.animationSpeed = 0.20;
         this.sprite.loop = true;
         this.sprite.play();
         this.app.stage.addChild(this.sprite);
@@ -47,16 +50,16 @@ class Player extends GameObject {
     setupKeysControls() {
         window.addEventListener('keydown', (event) => {
             switch (event.key) {
-                case 'w':
+                case 'w' || 'W':
                     this.movement.up = true;
                     break;
-                case 'a':
+                case 'a' || 'A':
                     this.movement.left = true;
                     break;
-                case 's':
+                case 's' || 'S':
                     this.movement.down = true;
                     break;
-                case 'd':
+                case 'd' || 'D':
                     this.movement.right = true;
                     break;
             }
@@ -88,34 +91,62 @@ class Player extends GameObject {
         }
     }
 
+    predictCollision(objects, moveX, moveY) {
+        if (objects.length === 0) {
+            return false;
+        }
+    
+        for(let obj of objects) {
+            
+            if (!obj || !obj.sprite) {
+                return false; // Handle cases where otherObject is invalid
+            }
+            
+            this.newPosX = this.sprite.x + moveX * this.speed;
+            this.newPosY = this.sprite.y + moveY * this.speed;
+
+            this.newBounds = {
+                x: this.newPosX - this.sprite.width / 2,
+                y: this.newPosY - this.sprite.height / 2,
+                width: this.sprite.width,
+                height: this.sprite.height,
+            };
+            const otherBounds = obj.sprite.getBounds();
+        
+            return this.newBounds.x < otherBounds.x + otherBounds.width &&
+                   this.newBounds.x + this.newBounds.width > otherBounds.x &&
+                   this.newBounds.y < otherBounds.y + otherBounds.height &&
+                   this.newBounds.y + this.newBounds.height > otherBounds.y;
+        }
+    }
+
     update(objects) {
         if (!this.ready) return;
-    
+        
         let moveX = 0;
         let moveY = 0;
-    
+
         if (this.movement.up) {
             this.switchAnimation("walkUp");
-            if (!this.checkCollision(objects)) {
+            if (!this.predictCollision(objects, 0, -1)) {
                 moveY = -1;
             }
-            // moveY = -1;
         }
         if (this.movement.down) {
             this.switchAnimation("walkDown");
-            if (!this.checkCollision(objects)) {
+            if (!this.predictCollision(objects, 0, 1)) {
                 moveY = 1;
             }
         }
         if (this.movement.left) {
             this.switchAnimation("walkLeft");
-            if (!this.checkCollision(objects)) {
+            if (!this.predictCollision(objects, -1, 0)) {
                 moveX = -1;
             }
         }
         if (this.movement.right) {
             this.switchAnimation("walkRight");
-            if (!this.checkCollision(objects)) {
+            if (!this.predictCollision(objects, 1, 0)) {
                 moveX = 1;
             }
         }
@@ -126,47 +157,6 @@ class Player extends GameObject {
             moveX /= magnitude;
             moveY /= magnitude;
         }
-
-        // Save current position before moving
-        let newPosX = this.sprite.x + moveX * this.speed;
-        let newPosY = this.sprite.y + moveY * this.speed;
-
-        // Create a temporary bounds to simulate the new position
-        const newBounds = {
-            x: newPosX - this.sprite.width / 2,
-            y: newPosY - this.sprite.height / 2,
-            width: this.sprite.width,
-            height: this.sprite.height,
-        };
-
-        // // Check for collisions with objects
-        // for (let obj of objects) {
-        //     if (obj.checkCollision(newBounds)) {
-        //         // Resolve the collision
-        //         const objBounds = obj.sprite.getBounds();
-
-        //         // Handle horizontal collision
-        //         if (moveX > 0) { // Moving right
-        //             newPosX = objBounds.x - this.sprite.width / 2; // Stop player on the left side of the object
-        //         } else if (moveX < 0) { // Moving left
-        //             newPosX = objBounds.x + objBounds.width + this.sprite.width / 2; // Stop player on the right side
-        //         }
-
-        //         // Handle vertical collision
-        //         if (moveY > 0) { // Moving down
-        //             newPosY = objBounds.y - this.sprite.height / 2; // Stop player on the top side
-        //         } else if (moveY < 0) { // Moving up
-        //             newPosY = objBounds.y + objBounds.height + this.sprite.height / 2; // Stop player on the bottom side
-        //         }
-
-        //         console.log('aaaaaaaa:');
-                
-        //     }
-        // }
-
-        // Apply new position
-        this.sprite.x = newPosX;
-        this.sprite.y = newPosY;
     
         // Cambiar animación dependiendo de la dirección
         if (moveY !== 0) {
