@@ -45,10 +45,5 @@ class Game {
 
     gameLoop() {
         this.player.update(this.objects);
-
-        if (this.player.checkCollision(this.objects)) {
-            console.log('Collision detected with:');
-            // Add collision response logic here
-        }
     }
 }
