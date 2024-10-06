@@ -1,6 +1,6 @@
 class Player extends GameObject {
     constructor(app) {
-        super(app, 400, 300);
+        super(app, 400, 300, 64, 64);
         this.ready = false;
         this.speed = 4;
         this.movement = {
@@ -12,11 +12,19 @@ class Player extends GameObject {
 
         this.animations = {};
         
-        // Create a temporary bounds to simulate the new position
-        const newBounds = {};
+        this.lastDirection = "down";
         
         this.setupKeysControls();
         this.loadPlayer();
+    }
+
+    createAnchorPointMarker() {
+        const marker = new PIXI.Graphics();
+        marker.beginFill(0xff0000); // Red color
+        marker.drawCircle(0, 0, 3); // Draw a small circle with a radius of 3
+        marker.endFill();
+        this.app.stage.addChild(marker);
+        return marker;
     }
 
     async loadPlayer() {
@@ -39,9 +47,18 @@ class Player extends GameObject {
         this.sprite.play();
         this.app.stage.addChild(this.sprite);
 
-        this.sprite.x = 400;
-        this.sprite.y = 300;
-        this.sprite.anchor.set(0.5);
+        this.sprite.x = this.spriteX;
+        this.sprite.y = this.spriteY;
+
+        // Hitbox of the player
+        this.width = this.sprite.width;
+        this.height = this.sprite.height;
+
+        this.sprite.anchor.set(0.5, 1);
+
+        this.anchorMarker = this.createAnchorPointMarker();
+        this.anchorMarker.x = this.sprite.x;
+        this.anchorMarker.y = this.sprite.y;
 
         this.ready = true;
     }
@@ -67,16 +84,16 @@ class Player extends GameObject {
 
         window.addEventListener('keyup', (event) => {
             switch (event.key) {
-                case 'w':
+                case 'w' || 'W':
                     this.movement.up = false;
                     break;
-                case 'a':
+                case 'a' || 'A':
                     this.movement.left = false;
                     break;
-                case 's':
+                case 's' || 'S':
                     this.movement.down = false;
                     break;
-                case 'd':
+                case 'd' || 'D':
                     this.movement.right = false;
                     break;
             }
@@ -91,35 +108,6 @@ class Player extends GameObject {
         }
     }
 
-    predictCollision(objects, moveX, moveY) {
-        if (objects.length === 0) {
-            return false;
-        }
-    
-        for(let obj of objects) {
-            
-            if (!obj || !obj.sprite) {
-                return false; // Handle cases where otherObject is invalid
-            }
-            
-            this.newPosX = this.sprite.x + moveX * this.speed;
-            this.newPosY = this.sprite.y + moveY * this.speed;
-
-            this.newBounds = {
-                x: this.newPosX - this.sprite.width / 2,
-                y: this.newPosY - this.sprite.height / 2,
-                width: this.sprite.width,
-                height: this.sprite.height,
-            };
-            const otherBounds = obj.sprite.getBounds();
-        
-            return this.newBounds.x < otherBounds.x + otherBounds.width &&
-                   this.newBounds.x + this.newBounds.width > otherBounds.x &&
-                   this.newBounds.y < otherBounds.y + otherBounds.height &&
-                   this.newBounds.y + this.newBounds.height > otherBounds.y;
-        }
-    }
-
     update(objects) {
         if (!this.ready) return;
         
@@ -127,26 +115,22 @@ class Player extends GameObject {
         let moveY = 0;
 
         if (this.movement.up) {
-            this.switchAnimation("walkUp");
-            if (!this.predictCollision(objects, 0, -1)) {
+            if (!this.predictCollisionWithObjects(objects, 0, -1)) {
                 moveY = -1;
             }
         }
         if (this.movement.down) {
-            this.switchAnimation("walkDown");
-            if (!this.predictCollision(objects, 0, 1)) {
+            if (!this.predictCollisionWithObjects(objects, 0, 1)) {
                 moveY = 1;
             }
         }
         if (this.movement.left) {
-            this.switchAnimation("walkLeft");
-            if (!this.predictCollision(objects, -1, 0)) {
+            if (!this.predictCollisionWithObjects(objects, -1, 0)) {
                 moveX = -1;
             }
         }
         if (this.movement.right) {
-            this.switchAnimation("walkRight");
-            if (!this.predictCollision(objects, 1, 0)) {
+            if (!this.predictCollisionWithObjects(objects, 1, 0)) {
                 moveX = 1;
             }
         }
@@ -158,7 +142,7 @@ class Player extends GameObject {
             moveY /= magnitude;
         }
     
-        // Cambiar animación dependiendo de la dirección
+        // Prioritize vertical animation when moving diagonally
         if (moveY !== 0) {
             if (moveY > 0) {
                 this.switchAnimation("walkDown");
@@ -171,30 +155,51 @@ class Player extends GameObject {
             } else {
                 this.switchAnimation("walkLeft");
             }
-        } else {
-            // Si no me muevo cambiar a idle dependiendo de la última dirección
-            if (this.lastDirection === "up") {
-                this.switchAnimation("idleUp");
-            } else if (this.lastDirection === "down") {
-                this.switchAnimation("idleDown");
-            } else if (this.lastDirection === "left") {
-                this.switchAnimation("idleLeft");
-            } else if (this.lastDirection === "right") {
-                this.switchAnimation("idleRight");
-            }
         }
-    
-        // Checkea la ultima dirección en la que estuvo
+
+        // Update last direction
         if (moveY !== 0) {
             this.lastDirection = (moveY > 0) ? "down" : "up";
         } else if (moveX !== 0) {
             this.lastDirection = (moveX > 0) ? "right" : "left";
         }
-    
-        // Movimiento
+
+        // Idle animation when not moving
+        if (moveX === 0 && moveY === 0) {
+            switch (this.lastDirection) {
+                case "up":
+                    this.switchAnimation("idleUp");
+                    break;
+                case "down":
+                    this.switchAnimation("idleDown");
+                    break;
+                case "left":
+                    this.switchAnimation("idleLeft");
+                    break;
+                case "right":
+                    this.switchAnimation("idleRight");
+                    break;
+            }
+        }
+
+        // Move player sprite
         this.sprite.x += moveX * this.speed;
         this.sprite.y += moveY * this.speed;
+
+        // this.width = this.sprite.width;
+        // this.height = this.sprite.height;
+
+        // Update the position of the anchor point marker
+        this.anchorMarker.x = this.sprite.x;
+        this.anchorMarker.y = this.sprite.y;
     }
     
-    
+    predictCollisionWithObjects(objects, moveX, moveY) {
+        for (let obj of objects) {
+            if (this.predictCollision(obj, moveX, moveY)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

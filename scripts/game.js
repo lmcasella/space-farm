@@ -5,9 +5,10 @@ class Game {
         this.height = 800;
 
         this.player = new Player(this.app);
-        // this.square = new Stone(this.app, 200, 200);
         this.objects = [];
         
+        this.ready = false;
+
         this.run();
     }
 
@@ -15,14 +16,6 @@ class Game {
         await this.app.init({width: this.width, height: this.height})
             .then(() => {
                 document.body.appendChild(this.app.canvas);
-
-                let square = new GameObject(this.app, 100, 200, 100, 100);
-                square.sprite.beginFill(0xff0000);
-                square.sprite.drawRect(0, 0, square.width, square.height);
-                square.sprite.endFill();
-                this.objects.push(square);
-
-                this.app.stage.addChild(square.sprite);
 
                 PIXI.Assets.add({ alias: 'background', src: 'assets/environments/Top-Down-Town/top-down-town-preview.png' });
                 PIXI.Assets.backgroundLoad(['background']);
@@ -35,15 +28,28 @@ class Game {
                         spriteBackground.zIndex = -1;
                         
                         this.app.stage.addChild(spriteBackground);
-                    });
+                    }
+                );
             });
-
+                
+        this.spawnObject(Stone, 200, 200, 64, 64);
+        
         this.app.ticker.add(() => {
             this.gameLoop();
         });
     }
 
+    spawnObject(object, x, y, width, height) {
+        // if (!this.ready) return;
+
+        let newObject = new object(this.app, x, y, width, height);
+        newObject.drawHitbox();  // This will draw a green box around the stone
+        this.objects.push(newObject);
+        this.app.stage.addChild(newObject.sprite);
+    }
+
     gameLoop() {
         this.player.update(this.objects);
+        // this.objects.forEach(obj => obj.update());
     }
 }
